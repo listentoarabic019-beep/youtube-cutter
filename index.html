@@ -15,7 +15,7 @@
         .btn-mp3 { background: linear-gradient(135deg, #10b981, #059669); }
         .btn-mp4 { background: linear-gradient(135deg, #3b82f6, #2563eb); }
         .btn-shorts { background: linear-gradient(135deg, #ec4899, #db2777); }
-        .btn-cobalt { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .btn-cut { background: linear-gradient(135deg, #f59e0b, #d97706); }
     </style>
 </head>
 <body class="text-white min-h-screen">
@@ -29,7 +29,6 @@
 
     <main class="max-w-4xl mx-auto p-4 space-y-6">
 
-        <!-- Input -->
         <section class="glass rounded-2xl p-6">
             <label class="block text-sm font-semibold mb-2 text-gray-300">رابط فيديو YouTube</label>
             <div class="flex gap-2">
@@ -41,7 +40,6 @@
             </div>
         </section>
 
-        <!-- Video Info -->
         <section id="infoSection" class="hidden glass rounded-2xl p-6">
             <div class="flex flex-col md:flex-row gap-4">
                 <img id="thumbImg" src="" class="w-full md:w-48 rounded-xl object-cover aspect-video">
@@ -55,7 +53,6 @@
             </div>
         </section>
 
-        <!-- Preview -->
         <section id="previewSection" class="hidden glass rounded-2xl p-6">
             <h3 class="font-bold mb-3 text-purple-400">معاينة الفيديو</h3>
             <div class="aspect-video rounded-xl overflow-hidden bg-black">
@@ -63,33 +60,20 @@
             </div>
         </section>
 
-        <!-- Time Controls -->
         <section id="controlsSection" class="hidden glass rounded-2xl p-6 space-y-4">
-            <h3 class="font-bold text-purple-400">اختر التوقيت (ثواني)</h3>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="text-xs text-gray-400 mb-1 block">البداية</label>
-                    <input type="number" id="startTime" value="0" min="0" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm">
-                </div>
-                <div>
-                    <label class="text-xs text-gray-400 mb-1 block">النهاية</label>
-                    <input type="number" id="endTime" value="10" min="1" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm">
-                </div>
-            </div>
-
-            <h3 class="font-bold text-gray-300 pt-2">اختر الصيغة</h3>
+            <h3 class="font-bold text-purple-400">اختر الصيغة</h3>
             <div class="grid grid-cols-2 gap-3">
-                <button onclick="openCobalt()" class="btn-cobalt px-4 py-3 rounded-xl text-sm font-bold transition">
-                    ✂️ قص + تحميل (Cobalt)
-                </button>
-                <button onclick="openShorts()" class="btn-shorts px-4 py-3 rounded-xl text-sm font-bold transition">
-                    📱 تحويل Shorts
-                </button>
-                <button onclick="openMP3()" class="btn-mp3 px-4 py-3 rounded-xl text-sm font-bold transition">
+                <button onclick="openTool('mp3')" class="btn-mp3 px-4 py-3 rounded-xl text-sm font-bold transition">
                     🎵 تحميل MP3
                 </button>
-                <button onclick="openMP4()" class="btn-mp4 px-4 py-3 rounded-xl text-sm font-bold transition">
+                <button onclick="openTool('mp4')" class="btn-mp4 px-4 py-3 rounded-xl text-sm font-bold transition">
                     🎬 تحميل MP4
+                </button>
+                <button onclick="openTool('shorts')" class="btn-shorts px-4 py-3 rounded-xl text-sm font-bold transition">
+                    📱 تحويل Shorts
+                </button>
+                <button onclick="openTool('cut')" class="btn-cut px-4 py-3 rounded-xl text-sm font-bold transition">
+                    ✂️ قص الفيديو
                 </button>
             </div>
         </section>
@@ -133,31 +117,26 @@
             link.click();
         }
 
-        function getUrl() {
-            return document.getElementById('videoUrl').value.trim();
-        }
-
-        // ✅ فتح Cobalt جاهز بالرابط والقص
-        function openCobalt() {
-            const start = document.getElementById('startTime').value;
-            const end = document.getElementById('endTime').value;
-            const url = `https://cobalt.tools/?url=${encodeURIComponent(getUrl())}`;
-            window.open(url, '_blank');
-        }
-
-        // ✅ فتح Y2mate للـ MP3
-        function openMP3() {
-            window.open(`https://www.y2mate.com/youtube-mp3/${videoId}`, '_blank');
-        }
-
-        // ✅ فتح SaveFrom للـ MP4
-        function openMP4() {
-            window.open(`https://en.savefrom.net/1-youtube-video-downloader-4/?url=${encodeURIComponent(getUrl())}`, '_blank');
-        }
-
-        // ✅ فتح Cobalt للـ Shorts
-        function openShorts() {
-            window.open(`https://cobalt.tools/?url=${encodeURIComponent(getUrl())}`, '_blank');
+        function openTool(type) {
+            const url = document.getElementById('videoUrl').value.trim();
+            let target = '';
+            
+            switch(type) {
+                case 'mp3':
+                    target = `https://ytmp3.cc/en13/?v=${videoId}`;
+                    break;
+                case 'mp4':
+                    target = `https://en.y2mate.is/v23/?v=${videoId}`;
+                    break;
+                case 'shorts':
+                    target = `https://www.kapwing.com/studio?media=${encodeURIComponent(url)}`;
+                    break;
+                case 'cut':
+                    target = `https://ytcutter.com/?v=${videoId}`;
+                    break;
+            }
+            
+            window.open(target, '_blank');
         }
 
         document.getElementById('videoUrl').addEventListener('paste', (e) => {
