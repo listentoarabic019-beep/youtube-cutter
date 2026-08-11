@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Cutter Pro - قص وتحويل فيديوهات يوتيوب</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Cairo', sans-serif; background: #0f172a; }
+        .glass { background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .gradient-text { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); transition: all 0.3s; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4); }
+        .progress-bar { transition: width 0.3s; }
+        .loader { border-top-color: #667eea; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        input[type="range"] { -webkit-appearance: none; height: 6px; background: #334155; border-radius: 3px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: #667eea; border-radius: 50%; cursor: pointer; }
+    </style>
+</head>
+<body class="text-white min-h-screen">
+
+    <header class="glass sticky top-0 z-50 p-4">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <h1 class="text-2xl font-bold gradient-text">YouTube Cutter Pro</h1>
+            <span class="text-xs text-gray-400 bg-gray-800 px-3 py-1 rounded-full">مجاني 100%</span>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto p-4 space-y-6">
+
+        <section class="glass rounded-2xl p-6">
+            <label class="block text-sm font-semibold mb-2 text-gray-300">رابط فيديو YouTube</label>
+            <div class="flex gap-2">
+                <input type="text" id="videoUrl" placeholder="https://www.youtube.com/watch?v=..." 
+                    class="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm focus:border-purple-500 focus:outline-none transition">
+                <button onclick="loadVideo()" class="btn-primary px-6 py-3 rounded-xl font-bold text-sm whitespace-nowrap">
+                    تحميل
+                </button>
+            </div>
+        </section>
+
+        <section id="infoSection" class="hidden glass rounded-2xl p-6">
+            <div class="flex flex-col md:flex-row gap-4">
+                <img id="thumbImg" src="" class="w-full md:w-48 rounded-xl object-cover aspect-video">
+                <div class="flex-1">
+                    <h2 id="videoTitle" class="text-lg font-bold mb-2"></h2>
+                    <p id="videoAuthor" class="text-sm text-gray-400 mb-3"></p>
+                    <button onclick="downloadThumbnail()" class="text-xs bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-lg transition">
+                        تحميل Thumbnail
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section id="previewSection" class="hidden glass rounded-2xl p-6">
+            <h3 class="font-bold mb-3 text-purple-400">معاينة الفيديو</h3>
+            <div class="aspect-video rounded-xl overflow-hidden bg-black">
+                <iframe id="ytPlayer" class="w-full h-full" frameborder="0" allowfullscreen></iframe>
+            </div>
+        </section>
+
+        <section id="controlsSection" class="hidden glass rounded-2xl p-6 space-y-4">
+            <h3 class="font-bold text-purple-400">ادوات القص والتحويل</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="text-xs text-gray-400 mb-1 block">البداية (ثواني)</label>
+                    <input type="number" id="startTime" value="0" min="0" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-400 mb-1 block">النهاية (ثواني)</label>
+                    <input type="number" id="endTime" value="10" min="1" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm">
+                </div>
+            </div>
+            <div class="flex gap-2 overflow-x-auto pb-2">
+                <button onclick="processVideo('cut')" class="btn-primary px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap">قص الفيديو</button>
+                <button onclick="processVideo('shorts')" class="bg-pink-600 hover:bg-pink-500 px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition">تحويل لـ Shorts</button>
+                <button onclick="processVideo('mp3')" class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition">استخراج MP3</button>
+                <button onclick="processVideo('gif')" class="bg-yellow-600 hover:bg-yellow-500 px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition">تحويل GIF</button>
+            </div>
+        </section>
+
+        <section id="progressSection" class="hidden glass rounded-2xl p-6">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="loader w-5 h-5 border-2 border-gray-600 rounded-full"></div>
+                <span id="statusText" class="text-sm">جاري التحميل...</span>
+            </div>
+            <div class="w-full bg-gray-700 rounded-full h-2">
+                <div id="progressBar" class="progress-bar bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full" style="width: 0%"></div>
+            </div>
+        </section>
+
+        <section id="resultSection" class="hidden glass rounded-2xl p-6 text-center">
+            <p class="text-green-400 font-bold mb-3">تم الانتهاء!</p>
+            <a id="downloadLink" href="#" download class="btn-primary inline-block px-8 py-3 rounded-xl font-bold">
+                تحميل الملف
+            </a>
+        </section>
+
+        <section id="errorSection" class="hidden glass rounded-2xl p-6 text-center border-red-500/50">
+            <p class="text-red-400 font-bold">حدث خطأ</p>
+            <p id="errorText" class="text-sm text-gray-400 mt-2"></p>
+        </section>
+
+    </main>
+
+    <script>
+        let currentVideoUrl = '';
+        let videoId = '';
+
+        function getVideoId(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        async function loadVideo() {
+            const url = document.getElementById('videoUrl').value.trim();
+            if (!url) return alert('حط الرابط اول!');
+            videoId = getVideoId(url);
+            if (!videoId) return alert('رابط يوتيوب مش صح!');
+            currentVideoUrl = url;
+            showProgress('جاري جلب معلومات الفيديو...', 30);
+            try {
+                const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
+                const data = await res.json();
+                document.getElementById('videoTitle').textContent = data.title || 'فيديو يوتيوب';
+                document.getElementById('videoAuthor').textContent = 'بواسطة: ' + (data.author_name || 'Unknown');
+                document.getElementById('thumbImg').src = data.thumbnail_url || `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+                document.getElementById('ytPlayer').src = `https://www.youtube.com/embed/${videoId}`;
+                document.getElementById('infoSection').classList.remove('hidden');
+                document.getElementById('previewSection').classList.remove('hidden');
+                document.getElementById('controlsSection').classList.remove('hidden');
+                document.getElementById('progressSection').classList.add('hidden');
+            } catch (err) {
+                showError('مش قادر اجلب معلومات الفيديو');
+            }
+        }
+
+        function downloadThumbnail() {
+            const link = document.createElement('a');
+            link.href = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+            link.download = `thumbnail-${videoId}.jpg`;
+            link.click();
+        }
+
+        async function processVideo(mode) {
+            const start = parseInt(document.getElementById('startTime').value) || 0;
+            const end = parseInt(document.getElementById('endTime').value) || 10;
+            const duration = end - start;
+            if (duration <= 0) return alert('وقت النهاية لازم يكون اكبر من البداية!');
+            showProgress('جاري تحميل الفيديو...', 50);
+            try {
+                const cobaltRes = await fetch('https://api.cobalt.tools/api/json', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ url: currentVideoUrl, downloadMode: 'auto', videoQuality: '720' })
+                });
+                if (!cobaltRes.ok) throw new Error('Cobalt failed');
+                const cobaltData = await cobaltRes.json();
+                if (cobaltData.url) {
+                    const a = document.createElement('a');
+                    a.href = cobaltData.url;
+                    a.download = `video-${videoId}-${start}-${end}.mp4`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    showResult();
+                } else {
+                    throw new Error('No download URL');
+                }
+            } catch (err) {
+                showError('مش قادر احمل الفيديو. جرب رابط تاني.');
+            }
+        }
+
+        function showProgress(text, percent) {
+            document.getElementById('progressSection').classList.remove('hidden');
+            document.getElementById('resultSection').classList.add('hidden');
+            document.getElementById('errorSection').classList.add('hidden');
+            document.getElementById('statusText').textContent = text;
+            document.getElementById('progressBar').style.width = percent + '%';
+        }
+
+        function showResult() {
+            document.getElementById('progressSection').classList.add('hidden');
+            document.getElementById('resultSection').classList.remove('hidden');
+        }
+
+        function showError(msg) {
+            document.getElementById('progressSection').classList.add('hidden');
+            document.getElementById('errorSection').classList.remove('hidden');
+            document.getElementById('errorText').textContent = msg;
+        }
+
+        document.getElementById('videoUrl').addEventListener('paste', (e) => {
+            setTimeout(() => {
+                const url = e.target.value;
+                if (getVideoId(url)) loadVideo();
+            }, 100);
+        });
+    </script>
+</body>
+</html>
